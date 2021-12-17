@@ -1,0 +1,15 @@
+body {
+    background-color: #101212;
+    color: white;
+}
+
+canvas {
+    border-radius: 6px;
+}
+
+#game {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
