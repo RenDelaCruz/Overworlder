@@ -133,6 +133,8 @@ export default class MainScene extends Phaser.Scene {
         y: this.actor.y,
         rotation: this.actor.rotation,
       };
+
+      // this.actorNametag.setPosition(this.actor.x, this.actor.y - 20);
     }
   }
 
@@ -144,6 +146,13 @@ export default class MainScene extends Phaser.Scene {
       .setSize(30, 40)
       .setOffset(0, 24)
       .setTint(0xd71e22);;
+
+    // Player nametag
+    // scene.actorNametag = scene.add.text(400, 300, "HELLOOOOO", {
+    //   fill: "#ff0000",
+    //   fontSize: "15px",
+    // });
+    console.log("YEFHSJDFH");
 
     // scene.cameras.main.startFollow(scene.actor);
     // scene.cameras.main.setBounds(0, 0, 1000, 8000);

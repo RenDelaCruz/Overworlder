@@ -27,8 +27,8 @@ module.exports = io => {
 
       const roomInfo = gameRooms[roomKey];
       roomInfo.players[socket.id] = {
-        x: 400,
-        y: 300,
+        x: spawnLocation(400),
+        y: spawnLocation(300),
         rotation: 0,
         playerId: socket.id,
         username: username ? username : `Player ${socket.id.substring(0, 5)}`,
@@ -115,7 +115,6 @@ module.exports = io => {
   });
 };
 
-// ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 const codeChars = "ABCDEF0123456789";
 
 function codeGenerator(keys) {
@@ -128,4 +127,10 @@ function codeGenerator(keys) {
     return codeGenerator(keys);
   }
   return code;
+}
+
+function spawnLocation(point, range = 40) {
+  const max = point + range;
+  const min = point - range;
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
