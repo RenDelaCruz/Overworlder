@@ -11,6 +11,16 @@ export default class MainScene extends Phaser.Scene {
       "assets/spritesheets/astronaut3.png",
       { frameWidth: 29, frameHeight: 37 });
     this.load.image("mainroom", "assets/backgrounds/mainroom.png");
+
+    this.load.spritesheet("adam_idle",
+      "assets/spritesheets/adam_idle_16x16.png",
+      { frameWidth: 16, frameHeight: 32 }
+    );
+
+    this.load.spritesheet("adam_run",
+      "assets/spritesheets/adam_run_16x16.png",
+      { frameWidth: 16, frameHeight: 32 }
+    );
   }
 
   create() {
@@ -27,6 +37,60 @@ export default class MainScene extends Phaser.Scene {
 
     // Launch waiting room
     scene.scene.launch("WaitingRoom", { socket: scene.socket });
+
+    // Animations
+
+    // Adam idle
+    this.anims.create({
+      key: "adam_idle_right",
+      frames: this.anims.generateFrameNumbers("adam_idle", { start: 0, end: 5 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_idle_up",
+      frames: this.anims.generateFrameNumbers("adam_idle", { start: 6, end: 11 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_idle_left",
+      frames: this.anims.generateFrameNumbers("adam_idle", { start: 12, end: 17 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_idle_down",
+      frames: this.anims.generateFrameNumbers("adam_idle", { start: 18, end: 23 }),
+      frameRate: 10,
+      repeat: -1
+    });
+
+    // Adam run
+    this.anims.create({
+      key: "adam_run_right",
+      frames: this.anims.generateFrameNumbers("adam_run", { start: 0, end: 5 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_run_up",
+      frames: this.anims.generateFrameNumbers("adam_run", { start: 6, end: 11 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_run_left",
+      frames: this.anims.generateFrameNumbers("adam_run", { start: 12, end: 17 }),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "adam_run_down",
+      frames: this.anims.generateFrameNumbers("adam_run", { start: 18, end: 23 }),
+      frameRate: 10,
+      repeat: -1
+    });
 
     // Create other players group
     this.otherPlayers = this.physics.add.group();
@@ -68,6 +132,8 @@ export default class MainScene extends Phaser.Scene {
         if (playerId === otherActor.playerId) {
           otherActor.setPosition(x, y);
           otherActor.rotation = rotation;
+
+          otherActor.nametag.setPosition(otherActor.x, setNametagOffset(otherActor));
         }
       });
     });
@@ -79,6 +145,7 @@ export default class MainScene extends Phaser.Scene {
       scene.otherPlayers.getChildren().forEach(otherActor => {
         if (playerId === otherActor.playerId) {
           otherActor.destroy();
+          otherPlayer.nametag.destroy();
         }
       });
     });
@@ -95,18 +162,19 @@ export default class MainScene extends Phaser.Scene {
       // Stop previous movment from last frame
       this.actor.body.setVelocity(0);
 
-      // Horizontal movment
+      // Movement
       if (this.cursors.left.isDown) {
         this.actor.body.setVelocityX(-speed);
+        this.actor.anims.play("adam_run_left", true);
       } else if (this.cursors.right.isDown) {
         this.actor.body.setVelocityX(speed);
-      }
-
-      // Vertical movement
-      if (this.cursors.up.isDown) {
+        this.actor.anims.play("adam_run_right", true);
+      } else if (this.cursors.up.isDown) {
         this.actor.body.setVelocityY(-speed);
+        this.actor.anims.play("adam_run_up", true);
       } else if (this.cursors.down.isDown) {
         this.actor.body.setVelocityY(speed);
+        this.actor.anims.play("adam_run_down", true);
       }
 
       // Normalize and scale velocity so actor can't move faster diagonally
@@ -125,6 +193,8 @@ export default class MainScene extends Phaser.Scene {
           rotation: this.actor.rotation,
           roomKey: scene.state.roomKey,
         });
+      } else {
+        this.actor.anims.play("adam_idle_down", true);
       }
 
       // Save previous position data
@@ -134,25 +204,25 @@ export default class MainScene extends Phaser.Scene {
         rotation: this.actor.rotation,
       };
 
-      // this.actorNametag.setPosition(this.actor.x, this.actor.y - 20);
+      this.actor.nametag.setPosition(this.actor.x, setNametagOffset(this.actor));
     }
   }
 
   addPlayer(scene, playerInfo) {
     scene.joined = true;
     scene.actor = scene.physics.add
-      .sprite(playerInfo.x, playerInfo.y, "astronaut")
-      .setOrigin(0.5, 0.5)
-      .setSize(30, 40)
-      .setOffset(0, 24)
-      .setTint(0xd71e22);;
+      .sprite(playerInfo.x, playerInfo.y, "adam_idle")
+      .setScale(2.5);
+    // .setOrigin(0.5, 0.5)
+    // .setSize(30, 40)
+    // .setOffset(0, 24)
+    // .setTint(0xd71e22);
 
     // Player nametag
-    // scene.actorNametag = scene.add.text(400, 300, "HELLOOOOO", {
-    //   fill: "#ff0000",
-    //   fontSize: "15px",
-    // });
-    console.log("YEFHSJDFH");
+    scene.actor.nametag = scene.add.text(playerInfo.x, setNametagOffset(scene.actor), playerInfo.username, {
+      fill: "#ffffff",
+      fontSize: "15px",
+    }).setOrigin(0.5, 0.5);
 
     // scene.cameras.main.startFollow(scene.actor);
     // scene.cameras.main.setBounds(0, 0, 1000, 8000);
@@ -161,15 +231,24 @@ export default class MainScene extends Phaser.Scene {
   }
 
   addOtherPlayers(scene, playerInfo) {
-    const otherActor = scene.add.sprite(
-      playerInfo.x,
-      playerInfo.y,
-      "astronaut",
-    );
+    const otherActor = scene.add
+      .sprite(playerInfo.x, playerInfo.y, "adam_idle")
+      .setScale(2.5);
 
-    console.log(`${playerInfo.username} joined the game.`);
+    // Other player nametag
+    otherActor.nametag = scene.add.text(playerInfo.x, setNametagOffset(otherActor), playerInfo.username, {
+      fill: "#ffffff",
+      fontSize: "15px",
+    }).setOrigin(0.5, 0.5);
+
 
     otherActor.playerId = playerInfo.playerId;
     scene.otherPlayers.add(otherActor);
+
+    console.log(`${playerInfo.username} joined the game.`);
   }
+}
+
+function setNametagOffset(player) {
+  return player.y + player.displayHeight / 1.5;
 }
