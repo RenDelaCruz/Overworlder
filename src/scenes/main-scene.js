@@ -127,13 +127,12 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.socket.on("playerMoved", playerInfo => {
-      const { x, y, rotation, playerId } = playerInfo;
+      const { x, y, direction, playerId } = playerInfo;
       scene.otherPlayers.getChildren().forEach(otherActor => {
         if (playerId === otherActor.playerId) {
           otherActor.setPosition(x, y);
-          otherActor.rotation = rotation;
-
-          otherActor.nametag.setPosition(otherActor.x, setNametagOffset(otherActor));
+          otherActor.nametag.setPosition(otherActor.x, setNametagOffsetY(otherActor));
+          otherActor.direction = direction;
         }
       });
     });
@@ -154,7 +153,6 @@ export default class MainScene extends Phaser.Scene {
   update() {
     const scene = this;
 
-    // Movement
     if (this.actor) {
       const speed = 225;
       // const prevVelocity = this.actor.body.velocity.clone();
@@ -166,15 +164,19 @@ export default class MainScene extends Phaser.Scene {
       if (this.cursors.left.isDown) {
         this.actor.body.setVelocityX(-speed);
         this.actor.anims.play("adam_run_left", true);
+        this.actor.direction = Direction.left;
       } else if (this.cursors.right.isDown) {
         this.actor.body.setVelocityX(speed);
         this.actor.anims.play("adam_run_right", true);
+        this.actor.direction = Direction.right;
       } else if (this.cursors.up.isDown) {
         this.actor.body.setVelocityY(-speed);
         this.actor.anims.play("adam_run_up", true);
+        this.actor.direction = Direction.up;
       } else if (this.cursors.down.isDown) {
         this.actor.body.setVelocityY(speed);
         this.actor.anims.play("adam_run_down", true);
+        this.actor.direction = Direction.down;
       }
 
       // Normalize and scale velocity so actor can't move faster diagonally
@@ -182,7 +184,7 @@ export default class MainScene extends Phaser.Scene {
 
       let x = this.actor.x;
       let y = this.actor.y;
-      let rotation = this.actor.rotation;
+      let direction = this.actor.direction;
       let prevPosition = this.actor.prevPosition;
 
       if (prevPosition && (x !== prevPosition.x || y !== prevPosition.y)) {
@@ -190,7 +192,7 @@ export default class MainScene extends Phaser.Scene {
         this.socket.emit("playerMovement", {
           x: this.actor.x,
           y: this.actor.y,
-          rotation: this.actor.rotation,
+          direction: this.actor.direction,
           roomKey: scene.state.roomKey,
         });
       } else {
@@ -201,11 +203,42 @@ export default class MainScene extends Phaser.Scene {
       this.actor.prevPosition = {
         x: this.actor.x,
         y: this.actor.y,
-        rotation: this.actor.rotation,
+        direction: this.actor.direction,
       };
 
-      this.actor.nametag.setPosition(this.actor.x, setNametagOffset(this.actor));
+      this.actor.nametag.setPosition(this.actor.x, setNametagOffsetY(this.actor));
+
+      this.renderOtherPlayerAnimations(this);
     }
+  }
+
+  renderOtherPlayerAnimations(scene) {
+    scene.otherPlayers.getChildren().forEach(otherActor => {
+      let x = otherActor.x;
+      let y = otherActor.y;
+      let direction = otherActor.direction;
+      let prevPosition = otherActor.prevPosition;
+
+      if (prevPosition && (x !== prevPosition.x || y !== prevPosition.y)) {
+        if (x > prevPosition.x) {
+          otherActor.anims.play("adam_run_right", true);
+        } else if (x < prevPosition.x) {
+          otherActor.anims.play("adam_run_left", true);
+        } else if (y > prevPosition.y) {
+          otherActor.anims.play("adam_run_down", true);
+        } else if (y < prevPosition.y) {
+          otherActor.anims.play("adam_run_up", true);
+        }
+      } else {
+        otherActor.anims.play("adam_idle_down", true);
+      }
+
+      otherActor.prevPosition = {
+        x: otherActor.x,
+        y: otherActor.y,
+        direction: otherActor.direction,
+      };
+    });
   }
 
   addPlayer(scene, playerInfo) {
@@ -213,19 +246,14 @@ export default class MainScene extends Phaser.Scene {
     scene.actor = scene.physics.add
       .sprite(playerInfo.x, playerInfo.y, "adam_idle")
       .setScale(2.5);
-    // .setOrigin(0.5, 0.5)
-    // .setSize(30, 40)
-    // .setOffset(0, 24)
-    // .setTint(0xd71e22);
 
     // Player nametag
-    scene.actor.nametag = scene.add.text(playerInfo.x, setNametagOffset(scene.actor), playerInfo.username, {
+    scene.actor.nametag = scene.add.text(playerInfo.x, setNametagOffsetY(scene.actor), playerInfo.username, {
       fill: "#ffffff",
       fontSize: "15px",
     }).setOrigin(0.5, 0.5);
 
-    // scene.cameras.main.startFollow(scene.actor);
-    // scene.cameras.main.setBounds(0, 0, 1000, 8000);
+    scene.actor.direction = playerInfo.direction;
 
     console.log(`Welcome, ${playerInfo.username}.`);
   }
@@ -236,19 +264,27 @@ export default class MainScene extends Phaser.Scene {
       .setScale(2.5);
 
     // Other player nametag
-    otherActor.nametag = scene.add.text(playerInfo.x, setNametagOffset(otherActor), playerInfo.username, {
+    otherActor.nametag = scene.add.text(playerInfo.x, setNametagOffsetY(otherActor), playerInfo.username, {
       fill: "#ffffff",
       fontSize: "15px",
     }).setOrigin(0.5, 0.5);
 
 
     otherActor.playerId = playerInfo.playerId;
+    otherActor.direction = playerInfo.direction;
     scene.otherPlayers.add(otherActor);
 
     console.log(`${playerInfo.username} joined the game.`);
   }
 }
 
-function setNametagOffset(player) {
+const Direction = Object.freeze({
+  up: "up",
+  down: "down",
+  left: "left",
+  right: "right",
+});
+
+function setNametagOffsetY(player) {
   return player.y + player.displayHeight / 1.5;
 }

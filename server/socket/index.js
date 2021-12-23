@@ -8,7 +8,7 @@ const gameRooms = {
   //     [socket.id]: {
   //       x: 100,
   //       y: 100,
-  //       rotation: 0,
+  //       direction: "down",
   //       playerId: socket.id,
   //       username: "Name",
   //     },
@@ -29,7 +29,7 @@ module.exports = io => {
       roomInfo.players[socket.id] = {
         x: spawnLocation(400),
         y: spawnLocation(300),
-        rotation: 0,
+        direction: "down",
         playerId: socket.id,
         username: username ? username : `Player ${socket.id.substring(0, 5)}`,
       };
@@ -55,10 +55,10 @@ module.exports = io => {
 
     // Update when a player moves
     socket.on("playerMovement", data => {
-      const { x, y, rotation, roomKey } = data;
+      const { x, y, direction, roomKey } = data;
       gameRooms[roomKey].players[socket.id].x = x;
       gameRooms[roomKey].players[socket.id].y = y;
-      gameRooms[roomKey].players[socket.id].rotation = rotation;
+      gameRooms[roomKey].players[socket.id].direction = direction;
 
       // Emit moving player's position to other players
       socket.to(roomKey).emit("playerMoved", gameRooms[roomKey].players[socket.id]);
