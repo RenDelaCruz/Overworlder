@@ -27,8 +27,8 @@ module.exports = io => {
 
       const roomInfo = gameRooms[roomKey];
       roomInfo.players[socket.id] = {
-        x: spawnLocation(400),
-        y: spawnLocation(300),
+        x: spawnLocation(384, 168),
+        y: spawnLocation(1711, 55),
         direction: "down",
         playerId: socket.id,
         username: username ? username : `Player ${socket.id.substring(0, 5)}`,
@@ -129,7 +129,7 @@ function codeGenerator(keys) {
   return code;
 }
 
-function spawnLocation(point, range = 40) {
+function spawnLocation(point, range) {
   const max = point + range;
   const min = point - range;
   return Math.floor(Math.random() * (max - min + 1) + min);

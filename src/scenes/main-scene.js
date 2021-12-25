@@ -21,19 +21,20 @@ export default class MainScene extends Phaser.Scene {
       "assets/spritesheets/adam_run_16x16.png",
       { frameWidth: 16, frameHeight: 32 }
     );
+
+    // Load tiles
+    this.load.image("tiles", "assets/tiles/serene_tile_set.png");
+    this.load.tilemapTiledJSON("map", "assets/tiles/serene_tile_map.json");
   }
 
   create() {
     const scene = this;
 
     // Cursors
-    this.cursors = this.input.keyboard.createCursorKeys();
-
-    // Background
-    this.add.image(0, 0, "mainroom").setOrigin(0);
+    scene.cursors = this.input.keyboard.createCursorKeys();
 
     // Create socket
-    this.socket = io();
+    scene.socket = io();
 
     // Launch waiting room
     scene.scene.launch("WaitingRoom", { socket: scene.socket });
@@ -93,7 +94,57 @@ export default class MainScene extends Phaser.Scene {
     });
 
     // Create other players group
-    this.otherPlayers = this.physics.add.group();
+    scene.otherPlayers = this.physics.add.group();
+
+    // Map
+    const map = this.make.tilemap({ key: "map" });
+    const tileset = map.addTilesetImage("sereneTileset", "tiles", 16, 16, 1, 2);
+    scene.worldLayerGround = map
+      .createLayer("backGround", tileset, 0, 0)
+      .setCollisionByProperty({ collision: true })
+      .setScale(3);
+    scene.worldLayerMid = map
+      .createLayer("midGround", tileset, 0, 0)
+      .setCollisionByProperty({ collision: true })
+      .setScale(3);
+    scene.worldLayerFore = map
+      .createLayer("foreGround", tileset, 0, 0)
+      .setCollisionByProperty({ collision: true })
+      .setScale(3);
+
+    // Define player in between map layers to create overlap hierarchy
+    scene.actor = scene.physics.add.sprite(384, 1711);
+
+    scene.worldLayerFloat = map
+      .createLayer("hoverGround", tileset, 0, 0)
+      .setCollisionByProperty({ collision: true })
+      .setScale(3);
+    scene.worldLayerFloat = map
+      .createLayer("floatGround", tileset, 0, 0)
+      .setCollisionByProperty({ collision: true })
+      .setScale(3);
+
+    // const debugGraphics = this.add.graphics().setAlpha(0.75);
+    // this.worldLayerFore.renderDebug(debugGraphics, {
+    //   tileColor: null, // Color of non-colliding tiles
+    //   collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+    //   faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+    // });
+    // this.worldLayerMid.renderDebug(debugGraphics, {
+    //   tileColor: null, // Color of non-colliding tiles
+    //   collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+    //   faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+    // });
+    // this.worldLayerGround.renderDebug(debugGraphics, {
+    //   tileColor: null, // Color of non-colliding tiles
+    //   collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+    //   faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+    // });
+
+    // Set camera
+    scene.cameras.main.startFollow(scene.actor);
+    scene.cameras.main.setBounds(0, 0, 1088 * 3, 640 * 3);
+    scene.physics.world.setBounds(0, 0, 1088 * 3, 640 * 3, true, true, true, true);
 
     // Join room - set state
     this.socket.on("setState", state => {
@@ -144,7 +195,7 @@ export default class MainScene extends Phaser.Scene {
       scene.otherPlayers.getChildren().forEach(otherActor => {
         if (playerId === otherActor.playerId) {
           otherActor.destroy();
-          otherPlayer.nametag.destroy();
+          otherActor.nametag.destroy();
         }
       });
     });
@@ -153,7 +204,7 @@ export default class MainScene extends Phaser.Scene {
   update() {
     const scene = this;
 
-    if (this.actor) {
+    if (this.joined) {
       const speed = 225;
       // const prevVelocity = this.actor.body.velocity.clone();
 
@@ -243,9 +294,12 @@ export default class MainScene extends Phaser.Scene {
 
   addPlayer(scene, playerInfo) {
     scene.joined = true;
-    scene.actor = scene.physics.add
-      .sprite(playerInfo.x, playerInfo.y, "adam_idle")
-      .setScale(2.5);
+    scene.actor.setPosition(playerInfo.x, playerInfo.y)
+      .setTexture("adam_idle")
+      .setCollideWorldBounds(true)
+      .setSize(10, 8)
+      .setOffset(3, 24)
+      .setScale(3);
 
     // Player nametag
     scene.actor.nametag = scene.add.text(playerInfo.x, setNametagOffsetY(scene.actor), playerInfo.username, {
@@ -255,13 +309,18 @@ export default class MainScene extends Phaser.Scene {
 
     scene.actor.direction = playerInfo.direction;
 
+    // Collisions
+    scene.physics.add.collider(scene.actor, scene.worldLayerGround);
+    scene.physics.add.collider(scene.actor, scene.worldLayerMid);
+    scene.physics.add.collider(scene.actor, scene.worldLayerFore);
+
     console.log(`Welcome, ${playerInfo.username}.`);
   }
 
   addOtherPlayers(scene, playerInfo) {
     const otherActor = scene.add
       .sprite(playerInfo.x, playerInfo.y, "adam_idle")
-      .setScale(2.5);
+      .setScale(3);
 
     // Other player nametag
     otherActor.nametag = scene.add.text(playerInfo.x, setNametagOffsetY(otherActor), playerInfo.username, {
