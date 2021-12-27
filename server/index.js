@@ -1,8 +1,8 @@
-const path = require("path");
-const express = require("express");
-const morgan = require("morgan");
-const compression = require("compression");
-const socketio = require("socket.io");
+const path = require('path');
+const express = require('express');
+const morgan = require('morgan');
+const compression = require('compression');
+const socketio = require('socket.io');
 
 const PORT = process.env.PORT || 8080;
 const app = express();
@@ -11,7 +11,7 @@ module.exports = app;
 
 const createApp = function () {
   // Logging middleware
-  app.use(morgan("dev"));
+  app.use(morgan('dev'));
 
   // Body parsing middleware
   app.use(express.json());
@@ -21,12 +21,12 @@ const createApp = function () {
   app.use(compression());
 
   // Static file-serving middleware
-  app.use(express.static(path.join(__dirname, "..", "public")));
+  app.use(express.static(path.join(__dirname, '..', 'public')));
 
   // Remaining requests with an extension (.js, .css, etc.) return 404
   app.use((req, res, next) => {
     if (path.extname(req.path).length) {
-      const err = new Error("Not found");
+      const err = new Error('Not found');
       err.status = 404;
       next(err);
     } else {
@@ -35,26 +35,24 @@ const createApp = function () {
   });
 
   // Serve index.html
-  app.use("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "..", "public/index.html"));
+  app.use('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public/index.html'));
   });
 
   // Server error handling endware
   app.use((err, req, res, next) => {
     console.error(err);
     console.error(err.stack);
-    res.status(err.status || 500).send(err.message || "Internal server error");
+    res.status(err.status || 500).send(err.message || 'Internal server error');
   });
 };
 
 function startListening() {
   // Create and listen to the server
-  const server = app.listen(PORT, () =>
-    console.log(`\n\nListening on port ${PORT}\nhttp://localhost:${PORT}/\n`)
-  );
+  const server = app.listen(PORT, () => console.log(`\n\nListening on port ${PORT}\nhttp://localhost:${PORT}/\n`));
 
   const io = socketio(server);
-  require("./socket")(io);
+  require('./socket')(io);
 }
 
 async function bootApp() {

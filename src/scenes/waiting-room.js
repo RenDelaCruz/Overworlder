@@ -1,8 +1,8 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
 
 export default class WaitingRoom extends Phaser.Scene {
   constructor() {
-    super("WaitingRoom");
+    super('WaitingRoom');
     this.state = {};
     this.hasBeenSet = false;
   }
@@ -12,7 +12,7 @@ export default class WaitingRoom extends Phaser.Scene {
   }
 
   preload() {
-    this.load.html("codeform", "assets/text/codeform.html");
+    this.load.html('codeform', 'assets/text/codeform.html');
   }
 
   create() {
@@ -34,65 +34,66 @@ export default class WaitingRoom extends Phaser.Scene {
     scene.popUp.fillRect(25, 25, 750, 500);
 
     // Title
-    scene.title = scene.add.text(100, 75, "RegEx Spaceship", {
-      fill: "#add8e6",
-      fontSize: "66px",
-      fontStyle: "bold",
+    scene.title = scene.add.text(100, 75, 'Overworlder', {
+      fill: '#000000',
+      fontSize: '66px',
+      fontStyle: 'bold',
     });
 
     // Left popup
     scene.boxes.strokeRect(100, 200, 275, 100);
     scene.boxes.fillRect(100, 200, 275, 100);
-    scene.requestButton = scene.add.text(140, 215, "Request Room Key", {
-      fill: "#000000",
-      fontSize: "20px",
-      fontStyle: "bold",
+    scene.requestButton = scene.add.text(140, 215, 'Request Room Key', {
+      fill: '#000000',
+      fontSize: '20px',
+      fontStyle: 'bold',
     });
 
     // Right popup
     scene.boxes.strokeRect(425, 200, 275, 100);
     scene.boxes.fillRect(425, 200, 275, 100);
-    scene.inputElement = scene.add.dom(562.5, 250).createFromCache("codeform");
-    scene.inputElement.addListener("click");
-    scene.inputElement.on("click", event => {
-      if (event.target.name === "enterRoom") {
-        const username = scene.inputElement.getChildByName("username-form").value;
-        const code = scene.inputElement.getChildByName("code-form").value.toUpperCase();
-        scene.socket.emit("isKeyValid", { username, code });
+    scene.inputElement = scene.add.dom(562.5, 250).createFromCache('codeform');
+    scene.inputElement.addListener('click');
+    scene.inputElement.on('click', (event) => {
+      if (event.target.name === 'enterRoom') {
+        const username = scene.inputElement.getChildByName('username-form').value;
+        const code = scene.inputElement.getChildByName('code-form').value.toUpperCase();
+        const sprite = scene.inputElement.getChildByName('character-sprite').value;
+        scene.socket.emit('isKeyValid', { username, code, sprite });
       }
     });
 
     // Request button
     scene.requestButton.setInteractive();
-    scene.requestButton.on("pointerdown", () => {
-      scene.socket.emit("getRoomCode");
+    scene.requestButton.on('pointerdown', () => {
+      scene.socket.emit('getRoomCode');
     });
 
     // Text
-    scene.notValidText = scene.add.text(465, 210, "", {
-      fill: "#ff0000",
-      fontSize: "15px",
+    scene.notValidText = scene.add.text(465, 202, '', {
+      fill: '#ff0000',
+      fontSize: '15px',
     });
-    scene.roomKeyText = scene.add.text(210, 250, "", {
-      fill: "#00ff00",
-      fontSize: "20px",
-      fontStyle: "bold",
+    scene.roomKeyText = scene.add.text(210, 250, '', {
+      fill: '#00ff00',
+      fontSize: '20px',
+      fontStyle: 'bold',
     });
 
     // Socket listeners
-    scene.socket.on("roomCreated", roomKey => {
+    scene.socket.on('roomCreated', (roomKey) => {
       console.log(`Created room: ${roomKey}`);
       scene.roomKey = roomKey;
       scene.roomKeyText.setText(scene.roomKey);
     });
 
-    scene.socket.on("keyNotValid", () => {
-      scene.notValidText.setText("Invalid Room Key");
+    scene.socket.on('keyNotValid', () => {
+      scene.notValidText.setText('Invalid Room Key');
     });
 
-    scene.socket.on("keyIsValid", data => {
-      scene.socket.emit("joinRoom", data);
-      scene.scene.stop("WaitingRoom");
+    scene.socket.on('keyIsValid', (data) => {
+      scene.socket.emit('joinRoom', data);
+      scene.scene.stop('WaitingRoom');
     });
   }
 
